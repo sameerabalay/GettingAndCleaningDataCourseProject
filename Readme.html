@@ -120,8 +120,8 @@ $(document).ready(function () {
 <p><a href="https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip">https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip</a></p>
 <ul>
 <li>The raw data is available at <a href="https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip">https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip</a></li>
-<li>The final tidy data which is the output of the run_analysis.R is finaloutput.txt</li>
-<li>Tidy data codebook is</li>
+<li>The final tidy data which is the output of the run_analysis.R is finaloutput.txt. The columns in the file are SubjectId, Activity, variable and value</li>
+<li>Tidy data codebook is codebook.pdf</li>
 <li><p>Tidying Recipe</p>
 <pre><code>1.Read the labels of all the columns for the data captured from features.txt
 2.Read the activity labels from the activity_labels.txt so the codes can be replaced by the activity labels
@@ -142,14 +142,22 @@ $(document).ready(function () {
 17.As we will only be needing the mean and standard deviation data we subset the data from step 14 to get the data for grouping and summarizing.
 18.The data from step 17 is then grouped by SubjectIds and Activity 
 19.The grouped data is then summarized to get the mean of all the subsetted recording
-20.The final data is outputted to finaloutput.txt file</code></pre></li>
+20.The grouped summarized data column names are renamed to indicate the data is now GroupedMean
+21.The summarized data is converted to a dataframe so the data can be melted by SubjectId and Activity
+22.The final data is outputted to finaloutput.txt file</code></pre></li>
 </ul>
 <div id="getting-started" class="section level2">
 <h2>Getting Started</h2>
-<p>The UCI HAR Dataset.zip that needs to be used should be downloaded to your local machine and is accessible by RStudio. The assumption is all the files are in the zip and it is not corrupted. Also make sure there is enough disk space to write the output file</p>
+<p>The UCI HAR Dataset.zip that needs to be used should be downloaded to your local machine and is accessible by RStudio. The assumption is all the files are in the zip and it is not corrupted.Also make sure there is enough disk space to write the output file</p>
 <div id="prerequisities" class="section level3">
 <h3>Prerequisities</h3>
-<p>The UCI HAR Dataset.zip should be downloaded on your local machine in a directory accessible by RStudio There should be enough disk space to write the output file The script file run_analysis.R exists in the same directory as the extracted dataset</p>
+<ul>
+<li>The UCI HAR Dataset.zip should be downloaded on your local machine in a directory accessible by RStudio</li>
+<li>There should be enough disk space to write the output file</li>
+<li>The script file run_analysis.R exists in the same directory as the extracted dataset</li>
+<li>The dplyr package is installed</li>
+<li>The reshape2 package is installed</li>
+</ul>
 </div>
 <div id="installing" class="section level3">
 <h3>Installing</h3>
@@ -248,11 +256,22 @@ runAnalysis &lt;- function(directory) {
         meanAndStdData &lt;- subset(testAndTrainData, select=columnsToSelect)
         
         ## Group and Summarise the data 
+        ## Load the dplyr package
+        library(dplyr)
         groupeddata &lt;- group_by(meanAndStdData, SubjectId, Activity)
         summarisedgroupeddata &lt;- meanAndStdData %&gt;% group_by(SubjectId, Activity) %&gt;% summarise_each(funs(mean))
         
+        ## Renames the summarised column names
+        colnames(summarisedgroupeddata)[3:68] &lt;- paste(&quot;GroupedMean&quot;, colnames(summarisedgroupeddata)[3:68], sep=&quot;_&quot;)
+        
+        ## Convert the summarisedgroupeddata as dataframe so melt can be performed.
+        summariseddataasdataframe &lt;- as.data.frame(summarisedgroupeddata)
+        ## Load the reshape2 package
+        library(reshape2)
+        mdata &lt;- melt(summariseddataasdataframe, id=c(&quot;SubjectId&quot;, &quot;Activity&quot;))
+        
         ## Write the output to a file
-        write.table(summarisedgroupeddata, sep=&quot;,&quot;, row.names = FALSE, file=&quot;finaloutput.txt&quot;)
+        write.table(mdata, sep=&quot;,&quot;, row.names = FALSE, file=&quot;finaloutput.txt&quot;)
         
         
 }</code></pre>

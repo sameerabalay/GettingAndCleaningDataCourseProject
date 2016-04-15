@@ -44,16 +44,15 @@ https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Datas
          
 ## Getting Started
 
-The UCI HAR Dataset.zip that needs to be used should be downloaded to your local machine and is accessible by RStudio. The assumption is all the files are in the zip and it is not corrupted.
-Also make sure there is enough disk space to write the output file
+The UCI HAR Dataset.zip that needs to be used should be downloaded to your local machine and is accessible by RStudio. The assumption is all the files are in the zip and it is not corrupted.Also make sure there is enough disk space to write the output file
 
 ### Prerequisities
 
-The UCI HAR Dataset.zip should be downloaded on your local machine in a directory accessible by RStudio
-There should be enough disk space to write the output file
-The script file run_analysis.R exists in the same directory as the extracted dataset
-The dplyr package is installed
-The reshape2 package is installed
+* The UCI HAR Dataset.zip should be downloaded on your local machine in a directory accessible by RStudio
+* There should be enough disk space to write the output file
+* The script file run_analysis.R exists in the same directory as the extracted dataset
+* The dplyr package is installed
+* The reshape2 package is installed
 
 ### Installing
 
@@ -159,11 +158,22 @@ runAnalysis <- function(directory) {
         meanAndStdData <- subset(testAndTrainData, select=columnsToSelect)
         
         ## Group and Summarise the data 
+        ## Load the dplyr package
+        library(dplyr)
         groupeddata <- group_by(meanAndStdData, SubjectId, Activity)
         summarisedgroupeddata <- meanAndStdData %>% group_by(SubjectId, Activity) %>% summarise_each(funs(mean))
         
+        ## Renames the summarised column names
+        colnames(summarisedgroupeddata)[3:68] <- paste("GroupedMean", colnames(summarisedgroupeddata)[3:68], sep="_")
+        
+        ## Convert the summarisedgroupeddata as dataframe so melt can be performed.
+        summariseddataasdataframe <- as.data.frame(summarisedgroupeddata)
+        ## Load the reshape2 package
+        library(reshape2)
+        mdata <- melt(summariseddataasdataframe, id=c("SubjectId", "Activity"))
+        
         ## Write the output to a file
-        write.table(summarisedgroupeddata, sep=",", row.names = FALSE, file="finaloutput.txt")
+        write.table(mdata, sep=",", row.names = FALSE, file="finaloutput.txt")
         
         
 }
